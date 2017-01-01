@@ -3,7 +3,7 @@ package uchiwa
 import (
 	"fmt"
 
-	"github.com/sensu/uchiwa/uchiwa/logger"
+	log "github.com/Sirupsen/logrus"
 )
 
 type stash struct {
@@ -17,13 +17,13 @@ type stash struct {
 func (u *Uchiwa) PostStash(data stash) error {
 	api, err := getAPI(u.Datacenters, data.Dc)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return err
 	}
 
 	_, err = api.CreateStash(data)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return err
 	}
 
@@ -50,7 +50,9 @@ func (u *Uchiwa) findStash(path string) ([]interface{}, error) {
 	for _, c := range u.Data.Stashes {
 		m, ok := c.(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert this stash to an interface %+v", c)
+			log.WithFields(log.Fields{
+				"stash": c,
+			}).Warn("Could not assert this stash to an interface.")
 			continue
 		}
 		if m["path"] == path {

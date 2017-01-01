@@ -4,21 +4,25 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sensu/uchiwa/uchiwa/logger"
 	"github.com/sensu/uchiwa/uchiwa/sensu"
+	log "github.com/Sirupsen/logrus"
 )
 
 // FindDcFromInterface ...
 func FindDcFromInterface(data interface{}, datacenters *[]sensu.Sensu) (*sensu.Sensu, map[string]interface{}, error) {
 	m, ok := data.(map[string]interface{})
 	if !ok {
-		logger.Warningf("Type assertion failed. Could not assert the given interface into a map: %+v", data)
+		log.WithFields(log.Fields{
+			"interface": data,
+		}).Warn("Type assertion failed. Could not assert the given interface into a map.")
 		return nil, nil, errors.New("Could not determine the datacenter.")
 	}
 
 	id := m["dc"].(string)
 	if id == "" {
-		logger.Warningf("The received interface does not contain any datacenter information: ", data)
+		log.WithFields(log.Fields{
+			"interface": data,
+		}).Warn("The received interface does not contain any datacenter information.")
 		return nil, nil, errors.New("Could not determine the datacenter.")
 	}
 
@@ -28,7 +32,10 @@ func FindDcFromInterface(data interface{}, datacenters *[]sensu.Sensu) (*sensu.S
 		}
 	}
 
-	logger.Warningf("Could not find the datacenter %s into %+v: ", id, data)
+	log.WithFields(log.Fields{
+		"interface": data,
+		"id": id,
+	}).Warn("Could not find the datacenter.")
 	return nil, nil, fmt.Errorf("Could not find the datacenter %s", id)
 }
 
@@ -65,7 +72,9 @@ func setID(elements []interface{}, separator string) {
 func setDc(v interface{}, dc string) {
 	m, ok := v.(map[string]interface{})
 	if !ok {
-		logger.Warningf("Could not assert interface: %+v", v)
+		log.WithFields(log.Fields{
+			"interface": v,
+		}).Warn("Could not assert interface.")
 	} else {
 		m["dc"] = dc
 	}

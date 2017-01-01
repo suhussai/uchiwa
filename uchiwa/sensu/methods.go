@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/sensu/uchiwa/uchiwa/helpers"
-	"github.com/sensu/uchiwa/uchiwa/logger"
 	"github.com/sensu/uchiwa/uchiwa/structs"
+	log "github.com/Sirupsen/logrus"
 )
 
 // These are the methods of the API struct that interface the more basic
@@ -54,7 +54,7 @@ func (api *API) getSlice(endpoint string, limit int) ([]interface{}, error) {
 
 		err = json.Unmarshal([]byte(res.Header.Get("X-Pagination")), &xPagination)
 		if err != nil {
-			logger.Warning(err)
+			log.Warn(err)
 		}
 
 		for len(list) < xPagination.Total {
@@ -74,7 +74,9 @@ func (api *API) getSlice(endpoint string, limit int) ([]interface{}, error) {
 			}
 
 			if len(partialList) == 0 {
-				logger.Debugf("No additional elements found, exiting pagination for %s endpoint", endpoint)
+				log.WithFields(log.Fields{
+					"endpoint": endpoint,
+				}).Debug("No additional elements found, exiting pagination for endpoint.")
 				break
 			}
 

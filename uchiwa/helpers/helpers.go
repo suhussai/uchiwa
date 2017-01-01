@@ -7,8 +7,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/sensu/uchiwa/uchiwa/logger"
 	"github.com/sensu/uchiwa/uchiwa/structs"
+	log "github.com/Sirupsen/logrus"
 )
 
 // BuildClientsMetrics builds the metrics for the events
@@ -29,7 +29,9 @@ func BuildClientsMetrics(clients *[]interface{}) *structs.StatusMetrics {
 
 		status, ok := client["status"].(int)
 		if !ok {
-			logger.Warningf("Could not assert the status to an int: %+v", client["status"])
+			log.WithFields(log.Fields{
+				"status": client["status"],
+			}).Warn("Could not assert the status to an int.")
 			continue
 		}
 
@@ -68,13 +70,17 @@ func BuildEventsMetrics(events *[]interface{}) *structs.StatusMetrics {
 
 		check, ok := event["check"].(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert this check to an interface: %+v", event["check"])
+			log.WithFields(log.Fields{
+				"check": event["check"],
+			}).Warn("Could not assert this check to an interface.")
 			continue
 		}
 
 		status, ok := check["status"].(float64)
 		if !ok {
-			logger.Warningf("Could not assert this status to a flot64: %+v", check["status"])
+			log.WithFields(log.Fields{
+				"status": check["status"],
+			}).Warn("Could not assert this status to a float64.")
 			continue
 		}
 
@@ -94,14 +100,16 @@ func BuildEventsMetrics(events *[]interface{}) *structs.StatusMetrics {
 // GetBoolFromInterface ...
 func GetBoolFromInterface(i interface{}) (bool, error) {
 	if i == nil {
-		logger.Debug("The interface is nil")
+		log.Debug("The interface is nil")
 		return false, errors.New("The interface is nil")
 	}
 
 	b, ok := i.(bool)
 	if !ok {
-		logger.Debugf("Could not assert to a boolean the interface: %+v", i)
-		return false, errors.New("Could not assert to a boolean the interface")
+		log.WithFields(log.Fields{
+			"interface": i,
+		}).Debug("Could not assert interface to a boolean.")
+		return false, errors.New("Could not assert interface to a boolean.")
 	}
 
 	return b, nil
@@ -183,7 +191,9 @@ func GetMapFromBytes(bytes []byte) (map[string]interface{}, error) {
 func GetMapFromInterface(i interface{}) map[string]interface{} {
 	m, ok := i.(map[string]interface{})
 	if !ok {
-		logger.Debugf("Could not assert to a map the interface: %+v", i)
+		log.WithFields(log.Fields{
+			"interface": i,
+		}).Debug("Could not assert interface to a map.")
 		return nil
 	}
 
@@ -225,7 +235,9 @@ func IsCheckSilenced(check map[string]interface{}, client, dc string, silenced [
 	for _, silence := range silenced {
 		m, ok := silence.(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert this silence entry to a map: %+v", silence)
+			log.WithFields(log.Fields{
+				"silence": silence,
+			}).Warn("Could not assert this silence entry to a map.")
 			continue
 		}
 

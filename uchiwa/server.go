@@ -10,8 +10,8 @@ import (
 	"github.com/sensu/uchiwa/uchiwa/authentication"
 	"github.com/sensu/uchiwa/uchiwa/authorization"
 	"github.com/sensu/uchiwa/uchiwa/filters"
-	"github.com/sensu/uchiwa/uchiwa/logger"
 	"github.com/sensu/uchiwa/uchiwa/structs"
+	log "github.com/Sirupsen/logrus"
 )
 
 // Authorization contains the available authorization methods
@@ -880,7 +880,10 @@ func (u *Uchiwa) stashHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := u.DeleteStash(dc, path)
 	if err != nil {
-		logger.Warningf("Could not delete the stash '%s': %s", path, err)
+		log.WithFields(log.Fields{
+			"path": path,
+			"error": err,
+		}).Warn("Could not delete the stash.")
 		http.Error(w, "Could not create the stash", http.StatusNotFound)
 		return
 	}
@@ -1119,11 +1122,13 @@ func (u *Uchiwa) WebServer(publicPath *string, auth authentication.Config) {
 	http.Handle("/login", auth.Login())
 
 	listen := fmt.Sprintf("%s:%d", u.Config.Uchiwa.Host, u.Config.Uchiwa.Port)
-	logger.Warningf("Uchiwa is now listening on %s", listen)
+	log.WithFields(log.Fields{
+		"address": listen,
+	}).Warn("Uchiwa is now listening.")
 
 	if u.Config.Uchiwa.SSL.CertFile != "" && u.Config.Uchiwa.SSL.KeyFile != "" {
-		logger.Fatal(http.ListenAndServeTLS(listen, u.Config.Uchiwa.SSL.CertFile, u.Config.Uchiwa.SSL.KeyFile, nil))
+		log.Fatal(http.ListenAndServeTLS(listen, u.Config.Uchiwa.SSL.CertFile, u.Config.Uchiwa.SSL.KeyFile, nil))
 	}
 
-	logger.Fatal(http.ListenAndServe(listen, nil))
+	log.Fatal(http.ListenAndServe(listen, nil))
 }

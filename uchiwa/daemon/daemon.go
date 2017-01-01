@@ -3,9 +3,9 @@ package daemon
 import (
 	"time"
 
-	"github.com/sensu/uchiwa/uchiwa/logger"
 	"github.com/sensu/uchiwa/uchiwa/sensu"
 	"github.com/sensu/uchiwa/uchiwa/structs"
+	log "github.com/Sirupsen/logrus"
 )
 
 const datacenterErrorString = "Connection error. Is the Sensu API running?"
@@ -31,9 +31,9 @@ func (d *Daemon) Start(interval int, data chan *structs.Data) {
 
 	select {
 	case data <- d.Data:
-		logger.Trace("Sending initial results on the 'data' channel")
+		log.Debug("Sending initial results on the 'data' channel")
 	default:
-		logger.Trace("Could not send initial results on the 'data' channel")
+		log.Debug("Could not send initial results on the 'data' channel")
 	}
 
 	// fetch new data every interval
@@ -46,9 +46,9 @@ func (d *Daemon) Start(interval int, data chan *structs.Data) {
 		// send the result over the data channel
 		select {
 		case data <- d.Data:
-			logger.Trace("Sending results on the 'data' channel")
+			log.Debug("Sending results on the 'data' channel")
 		default:
-			logger.Trace("Could not send results on the 'data' channel")
+			log.Debug("Could not send results on the 'data' channel")
 		}
 	}
 }
@@ -71,7 +71,9 @@ func (d *Daemon) fetchData() {
 	d.Data.Health.Sensu = make(map[string]structs.SensuHealth, len(*d.Datacenters))
 
 	for _, datacenter := range *d.Datacenters {
-		logger.Infof("Updating the datacenter %s", datacenter.Name)
+		log.WithFields(log.Fields{
+			"datacenter": datacenter.Name,
+		}).Info("Updating the datacenter.")
 
 		// set default health status
 		d.Data.Health.Sensu[datacenter.Name] = structs.SensuHealth{Output: datacenterErrorString, Status: 2}
@@ -80,37 +82,51 @@ func (d *Daemon) fetchData() {
 		// fetch sensu data from the datacenter
 		stashes, err := datacenter.GetStashes()
 		if err != nil {
-			logger.Warningf("Connection failed to the datacenter %s", datacenter.Name)
+			log.WithFields(log.Fields{
+				"datacenter": datacenter.Name,
+			}).Warn("Connection failed to the datacenter.")
 			continue
 		}
 		silenced, err := datacenter.GetSilenced()
 		if err != nil {
-			logger.Warningf("Impossible to retrieve silenced entries from the "+
-				"datacenter %s. Silencing might not be possible, please update Sensu", datacenter.Name)
+			log.WithFields(log.Fields{
+				"datacenter": datacenter.Name,
+			}).Warn("Impossible to retrieve silenced entries from the following datacenter. " +
+					"Silencing might not be possible, please update Sensu")
 		}
 		checks, err := datacenter.GetChecks()
 		if err != nil {
-			logger.Warningf("Connection failed to the datacenter %s", datacenter.Name)
+			log.WithFields(log.Fields{
+				"datacenter": datacenter.Name,
+			}).Warn("Connection failed to the datacenter.")
 			continue
 		}
 		clients, err := datacenter.GetClients()
 		if err != nil {
-			logger.Warningf("Connection failed to the datacenter %s", datacenter.Name)
+			log.WithFields(log.Fields{
+				"datacenter": datacenter.Name,
+			}).Warn("Connection failed to the datacenter.")
 			continue
 		}
 		events, err := datacenter.GetEvents()
 		if err != nil {
-			logger.Warningf("Connection failed to the datacenter %s", datacenter.Name)
+			log.WithFields(log.Fields{
+				"datacenter": datacenter.Name,
+			}).Warn("Connection failed to the datacenter.")
 			continue
 		}
 		info, err := datacenter.GetInfo()
 		if err != nil {
-			logger.Warningf("Connection failed to the datacenter %s", datacenter.Name)
+			log.WithFields(log.Fields{
+				"datacenter": datacenter.Name,
+			}).Warn("Connection failed to the datacenter.")
 			continue
 		}
 		aggregates, err := datacenter.GetAggregates()
 		if err != nil {
-			logger.Warningf("Connection failed to the datacenter %s", datacenter.Name)
+			log.WithFields(log.Fields{
+				"datacenter": datacenter.Name,
+			}).Warn("Connection failed to the datacenter.")
 			continue
 		}
 
@@ -178,7 +194,10 @@ func getEnterpriseMetrics(datacenter SensuDatacenter, metrics *structs.SERawMetr
 	for _, metric := range metricsEndpoints {
 		m[metric], err = datacenter.Metric(metric)
 		if err != nil {
-			logger.Debugf("Could not retrieve the %s enterprise metrics. %s", metric, datacenter.GetName())
+			log.WithFields(log.Fields{
+				"datacenter": datacenter.GetName(),
+				"metric": metric,
+			}).Debug("Could not retrieve the metric indicated for the following datacenter.")
 			m[metric] = &structs.SERawMetric{}
 		}
 	}

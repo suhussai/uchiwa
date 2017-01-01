@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/sensu/uchiwa/uchiwa/logger"
 	"github.com/sensu/uchiwa/uchiwa/structs"
+	log "github.com/Sirupsen/logrus"
 )
 
 // BuildSubscriptions builds a slice of every client subscriptions
@@ -14,7 +14,7 @@ func (d *Daemon) BuildSubscriptions() {
 		var generic structs.GenericClient
 		err := mapstructure.Decode(client, &generic)
 		if err != nil {
-			logger.Debug("%s", err)
+			log.Debug("%s", err)
 			continue
 		}
 

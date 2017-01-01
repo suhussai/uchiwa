@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/sensu/uchiwa/uchiwa/logger"
+	log "github.com/Sirupsen/logrus"
 )
 
 // TokenLocation represents a function that accepts a request as input and returns
@@ -24,7 +24,7 @@ func accessTokenFromAuthHeader(r *http.Request) (string, error) {
 
 	authorizationComponents := strings.Split(authorization, " ")
 	if len(authorizationComponents) != 2 || strings.ToLower(authorizationComponents[0]) != "token" {
-		logger.Debug("Invalid authorization header. The format must be: token {token}")
+		log.Debug("Invalid authorization header. The format must be: token {token}")
 		return "", errors.New("")
 	}
 

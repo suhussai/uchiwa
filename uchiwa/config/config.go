@@ -10,7 +10,7 @@ import (
 
 	"github.com/palourde/mergo"
 	"github.com/sensu/uchiwa/uchiwa/authentication"
-	"github.com/sensu/uchiwa/uchiwa/logger"
+	log "github.com/Sirupsen/logrus"
 )
 
 var (
@@ -57,16 +57,16 @@ func Load(file, directories string) *Config {
 	var err error
 	Private, err = loadFile(file)
 	if err != nil {
-		logger.Fatal(err)
+		log.Fatal(err)
 	}
 
 	// Apply default configs to the configuration file
 	if err := mergo.Merge(Private, defaultConfig); err != nil {
-		logger.Fatal(err)
+		log.Fatal(err)
 	}
 	for i := range Private.Sensu {
 		if err := mergo.Merge(&Private.Sensu[i], defaultSensuConfig); err != nil {
-			logger.Fatal(err)
+			log.Fatal(err)
 		}
 	}
 
@@ -74,7 +74,7 @@ func Load(file, directories string) *Config {
 		configDir := loadDirectories(directories)
 		// Overwrite the file config with the configs from the directories
 		if err := mergo.MergeWithOverwrite(Private, configDir); err != nil {
-			logger.Fatal(err)
+			log.Fatal(err)
 		}
 	}
 
@@ -85,7 +85,7 @@ func Load(file, directories string) *Config {
 		Private.Uchiwa = *Private.Dashboard
 		// Apply the default config to the dashboard attribute
 		if err := mergo.Merge(Private, defaultConfig); err != nil {
-			logger.Fatal(err)
+			log.Fatal(err)
 		}
 	}
 
@@ -103,7 +103,7 @@ func loadDirectories(path string) *Config {
 		// Find all JSON files in the specified directories
 		files, err := filepath.Glob(filepath.Join(directory, "*.json"))
 		if err != nil {
-			logger.Warning(err)
+			log.Warn(err)
 			continue
 		}
 
@@ -118,13 +118,13 @@ func loadDirectories(path string) *Config {
 		// Load the config from the file
 		c, err := loadFile(file)
 		if err != nil {
-			logger.Warning(err)
+			log.Warn(err)
 			continue
 		}
 
 		// Apply this configuration to the existing one
 		if err := mergo.MergeWithOverwrite(conf, c); err != nil {
-			logger.Warning(err)
+			log.Warn(err)
 			continue
 		}
 	}
@@ -132,7 +132,7 @@ func loadDirectories(path string) *Config {
 	// Apply the default config to the Sensu APIs
 	for i := range conf.Sensu {
 		if err := mergo.Merge(&conf.Sensu[i], defaultSensuConfig); err != nil {
-			logger.Fatal(err)
+			log.Fatal(err)
 		}
 	}
 
@@ -141,7 +141,9 @@ func loadDirectories(path string) *Config {
 
 // loadFile loads a Config struct from a configuration file
 func loadFile(path string) (*Config, error) {
-	logger.Warningf("Loading the configuration file %s", path)
+	log.WithFields(log.Fields{
+		"path": path,
+	}).Warn("Loading the configuration file.")
 
 	c := new(Config)
 	file, err := os.Open(path)
@@ -164,7 +166,9 @@ func initSensu(apis []SensuConfig) []SensuConfig {
 	for i, api := range apis {
 		// Set a datacenter name if missing
 		if api.Name == "" {
-			logger.Warningf("Sensu API %s has no name property, make sure to set it in your configuration. Generating a temporary one...", api.URL)
+			log.WithFields(log.Fields{
+				"api": api.URL,
+			}).Warn("The Sensu API shown has no name property, make sure to set it in your configuration. Generating a temporary one...")
 			apis[i].Name = fmt.Sprintf("sensu-%v", rand.Intn(100))
 		}
 
@@ -174,7 +178,9 @@ func initSensu(apis []SensuConfig) []SensuConfig {
 
 		// Make sure the host is not empty
 		if api.Host == "" {
-			logger.Fatalf("Sensu API %q Host is missing", api.Name)
+			log.WithFields(log.Fields{
+				"api": api.Name,
+			}).Fatal("The Sensu API shown has no host property.")
 		}
 
 		// Determine the protocol to use
@@ -219,7 +225,7 @@ func initUchiwa(global GlobalConfig) GlobalConfig {
 	} else if global.Db.Driver != "" && global.Db.Scheme != "" {
 		global.Auth.Driver = "sql"
 	} else if len(global.Users) != 0 {
-		logger.Debug("Loading multiple users from the config")
+		log.Debug("Loading multiple users from the config")
 		global.Auth.Driver = "simple"
 
 		for i := range global.Users {
@@ -232,15 +238,25 @@ func initUchiwa(global GlobalConfig) GlobalConfig {
 			authentication.Roles = append(authentication.Roles, global.Users[i].Role)
 		}
 	} else if global.User != "" && global.Pass != "" {
-		logger.Debug("Loading single user from the config")
+		log.Debug("Loading single user from the config")
 		global.Auth.Driver = "simple"
 
 		// Support multiple users
 		global.Users = append(global.Users, authentication.User{Username: global.User, Password: global.Pass, FullName: global.User})
 	}
 
-	// Set the logger level
-	logger.SetLogLevel(global.LogLevel)
+	// Set the log level
+	switch global.LogLevel {
+		case "debug": log.SetLevel(log.DebugLevel)
+		case "info": log.SetLevel(log.InfoLevel)
+		case "warn": log.SetLevel(log.WarnLevel)
+		case "error": log.SetLevel(log.ErrorLevel)
+		case "panic": log.SetLevel(log.PanicLevel)
+		default: log.SetLevel(log.InfoLevel)
+	}
+
+	// Set stdout as default log output
+	log.SetOutput(os.Stdout)
 
 	// Set the refresh rate for frontend
 	global.UsersOptions.Refresh = global.Refresh * 1000

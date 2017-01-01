@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/sensu/uchiwa/uchiwa/helpers"
-	"github.com/sensu/uchiwa/uchiwa/logger"
+	log "github.com/Sirupsen/logrus"
 )
 
 // BuildEvents constructs events objects for frontend consumption
@@ -15,33 +15,43 @@ func (d *Daemon) buildEvents() {
 		// get client name
 		clientMap, ok := m["client"].(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert event's client interface from %+v", clientMap)
+			log.WithFields(log.Fields{
+				"client": m["client"],
+			}).Warn("Could not assert event's client interface.")
 			continue
 		}
 
 		client, ok := clientMap["name"].(string)
 		if !ok {
-			logger.Warningf("Could not assert event's client name from %+v", clientMap)
+			log.WithFields(log.Fields{
+				"name": clientMap["name"],
+			}).Warn("Could not assert event's client name from client map.")
 			continue
 		}
 
 		// get check name
 		checkMap, ok := m["check"].(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert event's check interface from %+v", checkMap)
+			log.WithFields(log.Fields{
+				"check": m["check"],
+			}).Warn("Could not assert event's check from client map.")
 			continue
 		}
 
 		check, ok := checkMap["name"].(string)
 		if !ok {
-			logger.Warningf("Could not assert event's check name from %+v", checkMap)
+			log.WithFields(log.Fields{
+				"name": checkMap["name"],
+			}).Warn("Could not assert event's check name from check map.")
 			continue
 		}
 
 		// get dc name
 		dc, ok := m["dc"].(string)
 		if !ok {
-			logger.Warningf("Could not assert event's datacenter name from %+v", m)
+			log.WithFields(log.Fields{
+				"name": m["dc"],
+			}).Warn("Could not assert event's datacenter name from check map.")
 			continue
 		}
 

@@ -10,8 +10,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/context"
 	"github.com/mitchellh/mapstructure"
-	"github.com/sensu/uchiwa/uchiwa/logger"
 	"github.com/sensu/uchiwa/uchiwa/structs"
+	log "github.com/Sirupsen/logrus"
 )
 
 // JWTToken constant
@@ -66,7 +66,9 @@ func GetToken(role *Role, username string) (string, error) {
 func generateKeyPair() *rsa.PrivateKey {
 	keypair, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		logger.Fatalf("Could not generate an RSA keypair: %s", err)
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Fatal("Could not generate an RSA keypair.")
 	}
 
 	return keypair
@@ -75,7 +77,7 @@ func generateKeyPair() *rsa.PrivateKey {
 // generateToken generates a private and public RSA keys
 // in order to be used for the JWT signature
 func generateToken() (*rsa.PrivateKey, *rsa.PublicKey) {
-	logger.Debug("Generating new temporary RSA keys")
+	log.Debug("Generating new temporary RSA keys")
 	privateKey := generateKeyPair()
 	// Precompute some calculations
 	privateKey.Precompute()
@@ -92,7 +94,7 @@ func initToken(a structs.Auth) {
 	privateKey, publicKey, err = loadToken(a)
 	if err != nil {
 		// At this point we need to generate temporary RSA keys
-		logger.Debug(err)
+		log.Debug(err)
 		privateKey, publicKey = generateToken()
 	}
 }
@@ -100,7 +102,7 @@ func initToken(a structs.Auth) {
 // loadToken loads a private and public RSA keys from the filesystem
 // in order to be used for the JWT signature
 func loadToken(a structs.Auth) (*rsa.PrivateKey, *rsa.PublicKey, error) {
-	logger.Debug("Attempting to load the RSA keys from the filesystem")
+	log.Debug("Attempting to load the RSA keys from the filesystem")
 
 	if a.PrivateKey == "" || a.PublicKey == "" {
 		return nil, nil, errors.New("The paths to the private and public RSA keys were not provided")
@@ -109,24 +111,32 @@ func loadToken(a structs.Auth) (*rsa.PrivateKey, *rsa.PublicKey, error) {
 	// Read the files from the filesystem
 	prv, err := ioutil.ReadFile(a.PrivateKey)
 	if err != nil {
-		logger.Fatalf("Unable to open the private key file: %v", err)
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Fatal("Unable to open the private key file.")
 	}
 	pub, err := ioutil.ReadFile(a.PublicKey)
 	if err != nil {
-		logger.Fatalf("Unable to open the public key file: %v", err)
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Fatal("Unable to open the public key file.")
 	}
 
 	// Parse the RSA keys
 	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(prv)
 	if err != nil {
-		logger.Fatalf("Unable to parse the private key: %v", err)
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Fatal("Unable to parse the private key file.")
 	}
 	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(pub)
 	if err != nil {
-		logger.Fatalf("Unable to parse the public key: %v", err)
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Fatal("Unable to parse the public key.")
 	}
 
-	logger.Info("Provided RSA keys successfully loaded")
+	log.Info("Provided RSA keys successfully loaded")
 	return privateKey, publicKey, nil
 }
 
@@ -139,7 +149,9 @@ func setJWTInContext(r *http.Request, token *jwt.Token) {
 func verifyJWT(r *http.Request) (*jwt.Token, error) {
 	token, err := jwt.ParseFromRequest(r, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
-			logger.Debugf("Unexpected signing method: %v", t.Header["alg"])
+			log.WithFields(log.Fields{
+				"method": t.Header["alg"],
+			}).Debug("Unexpected signing method.")
 			return nil, errors.New("")
 		}
 		return publicKey, nil
@@ -150,7 +162,7 @@ func verifyJWT(r *http.Request) (*jwt.Token, error) {
 	}
 
 	if !token.Valid {
-		logger.Debug("Invalid JWT")
+		log.Debug("Invalid JWT")
 		return nil, errors.New("")
 	}
 

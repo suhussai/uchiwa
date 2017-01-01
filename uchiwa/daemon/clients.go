@@ -5,8 +5,8 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/sensu/uchiwa/uchiwa/helpers"
-	"github.com/sensu/uchiwa/uchiwa/logger"
 	"github.com/sensu/uchiwa/uchiwa/structs"
+	log "github.com/Sirupsen/logrus"
 )
 
 // buildClients constructs clients objects for frontend consumption
@@ -47,7 +47,9 @@ func findClientEvents(client map[string]interface{}, events *[]interface{}) map[
 
 			eventMap, ok := e.(map[string]interface{})
 			if !ok {
-				logger.Warningf("Could not convert the event to a map: %+v", eventMap)
+				log.WithFields(log.Fields{
+					"event": e,
+				}).Warn("Could not convert the event to a map.")
 				continue
 			}
 
@@ -63,7 +65,9 @@ func findClientEvents(client map[string]interface{}, events *[]interface{}) map[
 
 			clientMap, ok := eventMap["client"].(map[string]interface{})
 			if !ok {
-				logger.Warningf("Could not convert the event's client to a map: %+v", eventMap)
+				log.WithFields(log.Fields{
+					"client": eventMap["client"],
+				}).Warn("Could not convert the event's client to a map.")
 				continue
 			}
 
@@ -76,7 +80,9 @@ func findClientEvents(client map[string]interface{}, events *[]interface{}) map[
 			var check structs.GenericCheck
 			err := mapstructure.Decode(eventMap["check"], &check)
 			if err != nil {
-				logger.Warningf("Could not convert the event's check to a generic check structure: %s", err)
+				log.WithFields(log.Fields{
+					"err": err,
+				}).Warn("Could not convert the event's check to a generic check structure.")
 				continue
 			}
 

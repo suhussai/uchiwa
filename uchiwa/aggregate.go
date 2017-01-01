@@ -3,20 +3,20 @@ package uchiwa
 import (
 	"fmt"
 
-	"github.com/sensu/uchiwa/uchiwa/logger"
+	log "github.com/Sirupsen/logrus"
 )
 
 // DeleteAggregate deletes a specific aggregate
 func (u *Uchiwa) DeleteAggregate(name, dc string) error {
 	api, err := getAPI(u.Datacenters, dc)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return err
 	}
 
 	err = api.DeleteAggregate(name)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return err
 	}
 
@@ -27,13 +27,13 @@ func (u *Uchiwa) DeleteAggregate(name, dc string) error {
 func (u *Uchiwa) GetAggregate(name, dc string) (*map[string]interface{}, error) {
 	api, err := getAPI(u.Datacenters, dc)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return nil, err
 	}
 
 	aggregate, err := api.GetAggregate(name)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return nil, err
 	}
 
@@ -44,13 +44,13 @@ func (u *Uchiwa) GetAggregate(name, dc string) (*map[string]interface{}, error) 
 func (u *Uchiwa) GetAggregateChecks(name, dc string) (*[]interface{}, error) {
 	api, err := getAPI(u.Datacenters, dc)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return nil, err
 	}
 
 	checks, err := api.GetAggregateChecks(name)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return nil, err
 	}
 
@@ -61,13 +61,13 @@ func (u *Uchiwa) GetAggregateChecks(name, dc string) (*[]interface{}, error) {
 func (u *Uchiwa) GetAggregateClients(name, dc string) (*[]interface{}, error) {
 	api, err := getAPI(u.Datacenters, dc)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return nil, err
 	}
 
 	clients, err := api.GetAggregateClients(name)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return nil, err
 	}
 
@@ -78,13 +78,13 @@ func (u *Uchiwa) GetAggregateClients(name, dc string) (*[]interface{}, error) {
 func (u *Uchiwa) GetAggregateResults(name, severity, dc string) (*[]interface{}, error) {
 	api, err := getAPI(u.Datacenters, dc)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return nil, err
 	}
 
 	results, err := api.GetAggregateResults(name, severity)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return nil, err
 	}
 
@@ -96,7 +96,9 @@ func (u *Uchiwa) findAggregate(name string) ([]interface{}, error) {
 	for _, c := range u.Data.Aggregates {
 		m, ok := c.(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert this check to an interface %+v", c)
+			log.WithFields(log.Fields{
+				"interface": c,
+			}).Warn("Could not assert this check to an interface.")
 			continue
 		}
 		if m["name"] == name {

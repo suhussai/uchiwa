@@ -7,8 +7,8 @@ import (
 	"github.com/gorilla/context"
 	"github.com/sensu/uchiwa/uchiwa/audit"
 	"github.com/sensu/uchiwa/uchiwa/helpers"
-	"github.com/sensu/uchiwa/uchiwa/logger"
 	"github.com/sensu/uchiwa/uchiwa/structs"
+	log "github.com/Sirupsen/logrus"
 )
 
 // New function initalizes and returns a Config struct
@@ -33,7 +33,7 @@ func restrictedHandler(next http.Handler) http.Handler {
 		// Verify the JWT
 		token, err := verifyJWT(r)
 		if err != nil {
-			logger.Debug("No JWT token provided")
+			log.Debug("No JWT token provided")
 		}
 
 		// Verify the access token if no JWT was provided
@@ -43,7 +43,7 @@ func restrictedHandler(next http.Handler) http.Handler {
 
 		// If no JWT or access token found
 		if err != nil {
-			logger.Debug("No access token provided")
+			log.Debug("No access token provided")
 			http.Error(w, "Request unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -71,14 +71,18 @@ func (a *Config) Login() http.Handler {
 			var data interface{}
 			err := decoder.Decode(&data)
 			if err != nil {
-				logger.Warningf("Could not decode the body: %s", err)
+				log.WithFields(log.Fields{
+					"error": err,
+				}).Warn("Could not decode the body.")
 				http.Error(w, "", http.StatusInternalServerError)
 				return
 			}
 
 			m, ok := data.(map[string]interface{})
 			if !ok {
-				logger.Warningf("Could not assert the body: %s", err)
+				log.WithFields(log.Fields{
+					"error": err,
+				}).Warn("Could not assert the body.")
 				http.Error(w, "", http.StatusInternalServerError)
 				return
 			}
@@ -86,14 +90,14 @@ func (a *Config) Login() http.Handler {
 			u := m["user"].(string)
 			p := m["pass"].(string)
 			if u == "" || p == "" {
-				logger.Info("Authentication failed: user and password must not be empty")
+				log.Info("Authentication failed: user and password must not be empty")
 				http.Error(w, "", http.StatusUnauthorized)
 				return
 			}
 
 			user, err := a.login(u, p)
 			if err != nil {
-				logger.Info(err)
+				log.Info(err)
 
 				// Output to audit log
 				log := structs.AuditLog{Action: "loginfailure", Level: "default", Output: err.Error()}

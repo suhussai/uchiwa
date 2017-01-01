@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sensu/uchiwa/uchiwa/logger"
 	"github.com/sensu/uchiwa/uchiwa/sensu"
+	log "github.com/Sirupsen/logrus"
 )
 
 func getAPI(datacenters *[]sensu.Sensu, name string) (*sensu.Sensu, error) {
@@ -30,7 +30,9 @@ func findModel(id string, dc string, checks []interface{}) map[string]interface{
 	for _, k := range checks {
 		m, ok := k.(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert check interface %+v", k)
+			log.WithFields(log.Fields{
+				"check": k,
+			}).Warn("Could not assert check interface.")
 			continue
 		}
 		if m["name"] == id && m["dc"] == dc {

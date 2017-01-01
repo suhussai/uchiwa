@@ -3,21 +3,21 @@ package uchiwa
 import (
 	"fmt"
 
-	"github.com/sensu/uchiwa/uchiwa/logger"
 	"github.com/sensu/uchiwa/uchiwa/structs"
+	log "github.com/Sirupsen/logrus"
 )
 
 // IssueCheckExecution sends a POST request to the /stashes endpoint in order to create a stash
 func (u *Uchiwa) IssueCheckExecution(data structs.CheckExecution) error {
 	api, err := getAPI(u.Datacenters, data.Dc)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return err
 	}
 
 	_, err = api.IssueCheckExecution(data)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return err
 	}
 
@@ -29,7 +29,9 @@ func (u *Uchiwa) findCheck(name string) ([]interface{}, error) {
 	for _, c := range u.Data.Checks {
 		m, ok := c.(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert this check to an interface %+v", c)
+			log.WithFields(log.Fields{
+				"interface": c,
+			}).Warn("Could not assert this check to an interface.")
 			continue
 		}
 		if m["name"] == name {

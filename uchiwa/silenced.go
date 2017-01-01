@@ -1,6 +1,6 @@
 package uchiwa
 
-import "github.com/sensu/uchiwa/uchiwa/logger"
+import log "github.com/Sirupsen/logrus"
 
 type silence struct {
 	ID              string `json:"id"`
@@ -17,13 +17,13 @@ type silence struct {
 func (u *Uchiwa) ClearSilenced(data silence) error {
 	api, err := getAPI(u.Datacenters, data.Dc)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return err
 	}
 
 	_, err = api.ClearSilenced(data)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return err
 	}
 
@@ -34,13 +34,13 @@ func (u *Uchiwa) ClearSilenced(data silence) error {
 func (u *Uchiwa) PostSilence(data silence) error {
 	api, err := getAPI(u.Datacenters, data.Dc)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return err
 	}
 
 	_, err = api.Silence(data)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return err
 	}
 

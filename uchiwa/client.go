@@ -4,14 +4,16 @@ import (
 	"fmt"
 
 	"github.com/sensu/uchiwa/uchiwa/helpers"
-	"github.com/sensu/uchiwa/uchiwa/logger"
+	log "github.com/Sirupsen/logrus"
 )
 
 func (u *Uchiwa) buildClientHistory(client, dc string, history []interface{}) []interface{} {
 	for _, h := range history {
 		m, ok := h.(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert this client history to an interface: %+v", h)
+			log.WithFields(log.Fields{
+				"history": h,
+			}).Warn("Could not assert this client history to an interface.")
 			continue
 		}
 
@@ -20,7 +22,9 @@ func (u *Uchiwa) buildClientHistory(client, dc string, history []interface{}) []
 
 		check, ok := m["last_result"].(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert this check to a struct: %+v", m["last_result"])
+			log.WithFields(log.Fields{
+				"check": m["last_result"],
+			}).Warn("Could not assert this check to a struct.")
 			continue
 		}
 
@@ -34,13 +38,13 @@ func (u *Uchiwa) buildClientHistory(client, dc string, history []interface{}) []
 func (u *Uchiwa) DeleteClient(dc, name string) error {
 	api, err := getAPI(u.Datacenters, dc)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return err
 	}
 
 	err = api.DeleteClient(name)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return err
 	}
 
@@ -52,7 +56,9 @@ func (u *Uchiwa) findClient(name string) ([]interface{}, error) {
 	for _, c := range u.Data.Clients {
 		m, ok := c.(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert this client to an interface %+v", c)
+			log.WithFields(log.Fields{
+				"client": c,
+			}).Warn("Could not assert this client to an interface.")
 			continue
 		}
 		if m["name"] == name {
@@ -76,7 +82,9 @@ func (u *Uchiwa) findOutput(id *string, h map[string]interface{}, dc *string) st
 		// does the dc match?
 		m, ok := e.(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert this event to an interface %+v", e)
+			log.WithFields(log.Fields{
+				"event": e,
+			}).Warn("Could not assert this event to an interface.")
 			continue
 		}
 		if m["dc"] != *dc {
@@ -86,7 +94,9 @@ func (u *Uchiwa) findOutput(id *string, h map[string]interface{}, dc *string) st
 		// does the client match?
 		c, ok := m["client"].(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert this client to an interface: %+v", c)
+			log.WithFields(log.Fields{
+				"client": c,
+			}).Warn("Could not assert this client to an interface.")
 			continue
 		}
 
@@ -97,7 +107,9 @@ func (u *Uchiwa) findOutput(id *string, h map[string]interface{}, dc *string) st
 		// does the check match?
 		k := m["check"].(map[string]interface{})
 		if !ok {
-			logger.Warningf("Could not assert this check to an interface: %+v", k)
+			log.WithFields(log.Fields{
+				"check": k,
+			}).Warn("Could not assert this check to an interface.")
 			continue
 		}
 		if k["name"] != h["check"] {
@@ -113,13 +125,13 @@ func (u *Uchiwa) findOutput(id *string, h map[string]interface{}, dc *string) st
 func (u *Uchiwa) GetClient(dc, name string) (map[string]interface{}, error) {
 	api, err := getAPI(u.Datacenters, dc)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return nil, err
 	}
 
 	client, err := api.GetClient(name)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return nil, err
 	}
 
@@ -138,13 +150,13 @@ func (u *Uchiwa) GetClient(dc, name string) (map[string]interface{}, error) {
 func (u *Uchiwa) GetClientHistory(dc, name string) ([]interface{}, error) {
 	api, err := getAPI(u.Datacenters, dc)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return nil, err
 	}
 
 	h, err := api.GetClientHistory(name)
 	if err != nil {
-		logger.Warning(err)
+		log.Warn(err)
 		return nil, err
 	}
 

@@ -6,9 +6,9 @@ import (
 
 	"github.com/sensu/uchiwa/uchiwa/config"
 	"github.com/sensu/uchiwa/uchiwa/daemon"
-	"github.com/sensu/uchiwa/uchiwa/logger"
 	"github.com/sensu/uchiwa/uchiwa/sensu"
 	"github.com/sensu/uchiwa/uchiwa/structs"
+	log "github.com/Sirupsen/logrus"
 )
 
 // Uchiwa structure is used to manage Uchiwa
@@ -85,7 +85,7 @@ func (u *Uchiwa) listener(interval int, data chan *structs.Data) {
 	for {
 		select {
 		case result := <-data:
-			logger.Trace("Received results on the 'data' channel")
+			log.Debug("Received results on the 'data' channel")
 
 			u.Mu.Lock()
 			u.Data = result

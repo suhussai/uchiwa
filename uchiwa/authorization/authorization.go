@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/sensu/uchiwa/uchiwa/authentication"
-	"github.com/sensu/uchiwa/uchiwa/logger"
+	log "github.com/Sirupsen/logrus"
 )
 
 // Authorization contains the different methods used for authorizing
@@ -44,13 +44,13 @@ func isReadOnly(r *http.Request) bool {
 
 	token := authentication.GetJWTFromContext(r)
 	if token == nil { // authentication is not enabled
-		logger.Debug("No JWT found in context")
+		log.Debug("No JWT found in context")
 		return false
 	}
 
 	role, err := authentication.GetRoleFromToken(token)
 	if err != nil {
-		logger.Debug("Invalid token: %s", err)
+		log.Debug("Invalid token: %s", err)
 		return true
 	}
 
